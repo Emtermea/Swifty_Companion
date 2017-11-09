@@ -25,20 +25,20 @@ class ViewController: UIViewController {
         didSet {
         }
     }
+    
     var response : JSON = [] {
         didSet {
             performSegue(withIdentifier: "SegueID", sender: "")
         }
     }
     
+    var click : Bool = true
     
     override func viewDidLoad() {
-        
-        
         super.viewDidLoad()
         self.view.backgroundColor = UIColor(patternImage: UIImage(named: "wallPaperSwifty.jpg")!)
+        loginField.autocorrectionType = .no
         getToken()
-
     }
 
     func getToken() {
@@ -53,11 +53,8 @@ class ViewController: UIViewController {
                 print (" expiration token 2 : \(String(describing: self.token!.expire))")
                 let exp = self.token?.expire
                 print("------------------ expire token  ---------------- \(exp ?? 1000))")
-                
             }
-        
         }
-        
     }
 
     override func didReceiveMemoryWarning() {
@@ -65,35 +62,36 @@ class ViewController: UIViewController {
         // Dispose of any resources that can be recreated.
     }
 
-
     @IBOutlet weak var loginField: UITextField!
     
-    
     @IBAction func submitLogin(_ sender: Any) {
+        self.click = true
         if  let searchUsr = loginField.text {
-            let trimUsr = searchUsr.trimmingCharacters(in: .whitespacesAndNewlines)
-            if trimUsr.isEmpty {
+            if searchUsr.isEmpty {
                 return
             }
+
             if (token?.expire)! < 10 {
                 displayAlert(code: -1)
                 return
             }
-            let url = URL(string :"https://api.intra.42.fr/v2/users/\(trimUsr)")
             let header : HTTPHeaders = [
                 "Authorization": "Bearer \(token?.token ?? "toto")"
                 ]
-            Alamofire.request(url!, headers: header).responseJSON { (responseData) -> Void in
+            Alamofire.request("https://api.intra.42.fr/v2/users/\(searchUsr)", headers: header).responseJSON { (responseData) -> Void in
                 if (responseData.result.isSuccess) {
-                        if ((responseData.result.value) != nil) {
-                            if JSON(responseData.result.value!).isEmpty {
-                                self.displayAlert(code: 2)
+                    if ((responseData.result.value) != nil) {
+                        if JSON(responseData.result.value!).isEmpty {
+                            self.displayAlert(code: 2)
                                 return
-                            }
+                        }
+                        if self.click {
+                            self.click = false
                             self.response = JSON(responseData.result.value!)
-                        } else {
-                            print(responseData.result)
-                            self.displayAlert(code: 1)
+                        }
+                    } else {
+                        print(responseData.result)
+                        self.displayAlert(code: 1)
                     }
                 } else {
                     self.displayAlert(code: 1)
@@ -134,7 +132,6 @@ class ViewController: UIViewController {
             user.response = self.response
             }
         }
-    
     }
 
 
